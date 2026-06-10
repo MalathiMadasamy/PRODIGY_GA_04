@@ -1,0 +1,49 @@
+# Install libraries
+!pip install torch torchvision matplotlib pillow -q
+
+import torch
+from PIL import Image
+import matplotlib.pyplot as plt
+from torchvision import transforms
+from torchvision.models.segmentation import fcn_resnet50
+
+# Load pre-trained model
+model = fcn_resnet50(pretrained=True)
+model.eval()
+
+# Upload image
+from google.colab import files
+uploaded = files.upload()
+
+image_path = list(uploaded.keys())[0]
+
+# Read image
+image = Image.open(image_path).convert("RGB")
+
+transform = transforms.Compose([
+    transforms.Resize((256, 256)),
+    transforms.ToTensor()
+])
+
+input_tensor = transform(image).unsqueeze(0)
+
+# Image Translation
+with torch.no_grad():
+    output = model(input_tensor)["out"][0]
+
+translated_image = output.argmax(0).byte().cpu().numpy()
+
+# Display
+plt.figure(figsize=(10,5))
+
+plt.subplot(1,2,1)
+plt.imshow(image)
+plt.title("Input Image")
+plt.axis("off")
+
+plt.subplot(1,2,2)
+plt.imshow(translated_image)
+plt.title("Translated Image")
+plt.axis("off")
+
+plt.show()
